@@ -27,7 +27,7 @@ private:
     struct SharedMemory {
         // Use this Shared Memory as a queue.
         std::atomic<int> size;
-        char tasks[1000][256]; // 1000 (SHAREDMEM_CAPACITY) tasks, each task is 256 bytes long.
+        char tasks[SHAREDMEM_CAPACITY][256]; // 1000 (SHAREDMEM_CAPACITY) tasks, each task is 256 bytes long.
         int front;
         int rear;
 
@@ -46,7 +46,7 @@ private:
 
     SharedMemory* sharedMem; // Shared Memory Pointer
     int shmFd; // Shared Memory(shm) File Descriptor(fd)
-    const char* SHM_NAME = "/my_queue"; // Shared Memory(SHM) Name
+    const char* SHM_NAME = "/taskQueue"; // Shared Memory(SHM) Name
 
     std::mutex queueLock;
 };

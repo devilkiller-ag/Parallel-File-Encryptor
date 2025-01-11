@@ -15,7 +15,7 @@
 
 ProcessManagement::ProcessManagement() {
     itemsSemaphore = sem_open("/items_semaphore", O_CREAT, 0666, 0);
-    emptySlotsSemaphore = sem_open("/empty_slots_semaphore", O_CREAT, 0666, 1000);
+    emptySlotsSemaphore = sem_open("/empty_slots_semaphore", O_CREAT, 0666, SHAREDMEM_CAPACITY);
     if(itemsSemaphore == SEM_FAILED || emptySlotsSemaphore == SEM_FAILED) {
         perror("shm_open failed");
         exit(EXIT_FAILURE);
@@ -39,12 +39,12 @@ bool ProcessManagement::submitToQueue(std::unique_ptr<Task> task) {
     sem_wait(emptySlotsSemaphore);
     std::unique_lock<std::mutex> lock(queueLock);
 
-    if(sharedMem->size.load() >= 1000) {
+    if(sharedMem->size.load() >= SHAREDMEM_CAPACITY) {
         return false;
     }
 
     strcpy(sharedMem->tasks[sharedMem->rear], task->toString().c_str());
-    sharedMem->rear = (sharedMem->rear + 1) % 1000;
+    sharedMem->rear = (sharedMem->rear + 1) % SHAREDMEM_CAPACITY;
     sharedMem->size.fetch_add(1);
 
     lock.unlock();
@@ -64,7 +64,7 @@ void ProcessManagement::executeTask() {
     char taskString[256];
     strcpy(taskString, sharedMem->tasks[sharedMem->front]);
 
-    sharedMem->front = (sharedMem->front + 1) % 1000;
+    sharedMem->front = (sharedMem->front + 1) % SHAREDMEM_CAPACITY;
     sharedMem->size.fetch_sub(1);
 
     sem_post(emptySlotsSemaphore);
